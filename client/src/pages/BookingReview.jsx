@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useBooking } from '../store/BookingContext.jsx';
 import { book, cancel } from '../api/client.js';
@@ -6,18 +6,39 @@ import Card from '../components/ui/Card.jsx';
 import Button from '../components/ui/Button.jsx';
 import { CLASS_LABEL, inr, BERTH_LABEL } from '../constants.js';
 
+// HH:MM:SS (drops the hours segment when zero).
+function fmt(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(s / 3600);
+  const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+  const sec = String(s % 60).padStart(2, '0');
+  return h > 0 ? `${String(h).padStart(2, '0')}:${m}:${sec}` : `${m}:${sec}`;
+}
+
 export default function BookingReview() {
   const nav = useNavigate();
   const { draft, patch, reset } = useBooking();
   const [busy, setBusy] = useState(null);
   const [err, setErr] = useState(null);
+  const [now, setNow] = useState(Date.now());
+  const [skipped, setSkipped] = useState(false);
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   if (!draft.intentId) return <Navigate to="/" replace />;
+
+  const openAt = draft.train.tatkalOpenAt ? new Date(draft.train.tatkalOpenAt).getTime() : 0;
+  const remaining = Math.max(0, openAt - now);
+  const windowOpen = remaining <= 0;
+  const unlocked = windowOpen || skipped;
 
   async function confirm() {
     setBusy('book'); setErr(null);
     try {
-      const outcome = await book(draft.intentId); // synchronous: seat allocated now
+      const outcome = await book(draft.intentId);
       patch({ outcome });
       nav('/live');
     } catch (e) { setErr(e.response?.data?.error || e.message); setBusy(null); }
@@ -30,6 +51,31 @@ export default function BookingReview() {
 
   return (
     <div className="mx-auto max-w-lg">
+      {/* Tatkal window gate */}
+      {!unlocked ? (
+        <div className="mb-4 overflow-hidden rounded-[6px] bg-brand-dark text-white shadow-sm">
+          <div className="px-5 py-5 text-center">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">Tatkal (Tatkal quota) window opens in</div>
+            <div className="tabular mt-1.5 text-5xl font-bold leading-none">{fmt(remaining)}</div>
+            <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[12px] text-white/85">
+              <span>🔒</span> Booking unlocks automatically when the timer hits zero
+            </div>
+          </div>
+          <div className="border-t border-white/15 px-5 py-2 text-center">
+            <button onClick={() => setSkipped(true)} className="text-[12.5px] font-medium text-white/90 underline underline-offset-2 hover:text-white">
+              Skip the timer (demo) →
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="mb-4 flex items-center gap-2 rounded-[4px] border border-green-200 bg-green-50 px-4 py-2.5 text-[13px] text-avail-green">
+          <span className="h-2.5 w-2.5 rounded-full bg-avail-green" />
+          <span>
+            <strong>Tatkal window is open.</strong>{skipped && !windowOpen ? ' (timer skipped for demo)' : ''} Tap Book Now — your seat is allocated in first-come order.
+          </span>
+        </div>
+      )}
+
       <Card title="Review & Book" bodyClass="p-0">
         <div className="border-b border-line px-4 py-2.5">
           <div className="text-[14px] font-bold text-brand-dark">{draft.train.trainName} <span className="font-normal text-muted">(#{draft.train.trainId})</span></div>
@@ -63,10 +109,11 @@ export default function BookingReview() {
         <Button variant="danger" disabled={!!busy} onClick={abort} className="flex-1">
           {busy === 'cancel' ? 'Cancelling…' : 'Cancel'}
         </Button>
-        <Button variant="cta" disabled={!!busy} onClick={confirm} className="flex-1">
-          {busy === 'book' ? 'Booking…' : 'Book Now'}
+        <Button variant="cta" disabled={!!busy || !unlocked} onClick={confirm} className="flex-1">
+          {busy === 'book' ? 'Booking…' : unlocked ? 'Book Now' : `🔒 Opens in ${fmt(remaining)}`}
         </Button>
       </div>
+
       <p className="mt-2 text-center text-[11px] text-muted">
         Your seat is allocated instantly, in first-come order. Fare is debited only if it confirms.
       </p>
