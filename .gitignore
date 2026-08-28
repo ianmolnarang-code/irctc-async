@@ -6,8 +6,3 @@ CLAUDE.md
 dist/
 *.log
 .DS_Store
-
-# Hero image is Adobe Stock "Editorial Use Only" — kept out of the repo so it
-# isn't redistributed. Add a licensed or free-to-use image at
-# client/public/train-hero.jpg before deploying.
-client/public/train-hero.jpg
