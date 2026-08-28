@@ -1,28 +1,11 @@
 {
-  "name": "tatkal-async",
-  "version": "0.1.0",
+  "name": "irctc-async",
+  "version": "1.0.0",
   "private": true,
-  "type": "module",
-  "description": "Async Tatkal — decoupled, queue-based railway booking demo (scaffold + core engine)",
+  "description": "IRCTC-style prepare-ahead Tatkal booking demo — client-only (localStorage), no backend.",
   "scripts": {
-    "server": "node server/index.js",
-    "server:dev": "nodemon server/index.js",
-    "worker": "node worker/index.js",
-    "worker:dev": "nodemon worker/index.js",
-    "seed": "node scripts/seed.js",
-    "client": "npm --prefix client run dev"
-  },
-  "dependencies": {
-    "bullmq": "^5.34.0",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "ioredis": "^5.4.2",
-    "mongoose": "^8.9.5",
-    "nanoid": "^5.0.9",
-    "socket.io": "^4.8.1"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.9"
+    "dev": "npm --prefix client run dev",
+    "build": "npm --prefix client install && npm --prefix client run build",
+    "preview": "npm --prefix client run preview"
   }
 }

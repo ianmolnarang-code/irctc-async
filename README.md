@@ -1,112 +1,71 @@
-# Async Tatkal — scaffold + core engine
+# Async Tatkal — prepare-ahead Tatkal booking (demo)
 
-A decoupled, queue-based railway booking demo. The citizen does all the heavy
-work (passengers, identity, payment authorization) **before** the 10 AM Tatkal
-rush; a single lightweight click then enqueues a booking *intent* that a
-**separate worker process** consumes in strict FCFS order to allocate a seat
-race-free.
+An IRCTC-style booking demo that fixes the 10 AM Tatkal scramble. You do all the
+slow stuff **before** the window opens — passenger details, identity, and a
+pre-authorized **autopay mandate** (IPO/ASBA-style: money is *blocked, not
+debited*). At 10 AM you just press **Book** once. Same first-come seat
+allocation — only the friction and the payment coupling are removed.
 
-> **Demo only.** Not affiliated with IRCTC / Indian Railways. No real Aadhaar,
-> UPI, OTP, or payment data is used anywhere.
+> **Demo only.** Not affiliated with or endorsed by IRCTC / Indian Railways.
+> No real Aadhaar, UPI, OTP, or payment data is used.
+
+## The problem it solves
+
+- At 10:00 everyone fills details + pays at the same moment → it's slow and
+  seats vanish mid-form.
+- Payment and ticketing are coupled → money can be debited with **no** seat.
+- That failed booking is refunded only after **~2 days**.
+
+**Fix:** prepare everything ahead → one tap at 10 AM → debit **only** if the
+seat confirms; on waitlist the hold is released (no debit, no 2-day refund).
 
 ## Architecture
 
+Pure client-side single-page app — **no backend, no database.** All data
+(inventory, bookings, PNRs) lives in the browser's `localStorage`, and seat
+allocation runs in the client. This makes it a trivial static deploy.
+
+> Because state is in `localStorage`, inventory is **per-browser** — this is a
+> UX/journey demo, not a shared-inventory system.
+
 ```
-Browser ──POST /intent──▶ Express API ──creates──▶ MongoDB (Intent PREBOOKED, Mandate BLOCKED)
-   │                          │
-   └──POST /book──────────────┤ stamp queuedAt, status QUEUED, 202 Accepted
-                              ▼
-                        BullMQ queue  (one per train:class)   ← "Kafka-style" ordered queue
-                              ▼
-                     Worker process (concurrency 1 / train-class)
-                        atomic seat decrement · allocate berth
-                        execute-after-confirm mandate · idempotent
-                              │
-                    ┌─────────┴──────────┐
-                    ▼                    ▼
-             Redis (seat cache)   Redis pub/sub ──▶ API re-broadcasts ──▶ Socket.io ──▶ browser
+client/                     Vite + React (IRCTC-style UI)
+  src/
+    api/client.js           the "data layer" — localStorage store + allocation
+    pages/                  Search, PreBook wizard, Review, Result, My Bookings, PNR, About
+    components/, store/     UI kit + booking context
+vercel.json                 static build config for Vercel
 ```
 
-Two processes share this codebase — `npm run server` (API) and
-`npm run worker` (consumer). The physical split is the point: it proves the
-decoupling.
+## Run locally
+
+```bash
+npm install --prefix client
+npm run dev
+```
+
+Open http://localhost:5173. Inventory seeds itself on first load.
+
+## Flow
+
+Search → Passengers → Aadhaar (mock OTP to the Aadhaar-linked mobile) → UPI
+mandate (mock, blocks the fare) → **Review → Book Now** (instant allocation) →
+Result. Prepared-but-unbooked intents show a one-tap **Book Now** in **My
+Bookings** — the "10 AM moment."
+
+## Deploy (Vercel)
+
+Import the repo — `vercel.json` builds `client/` to `client/dist` and serves it
+as a static SPA. **No environment variables, no database.**
 
 ## What's real vs mocked
 
 | Real | Mocked |
 | --- | --- |
-| Ordered queue, strict FCFS (`queuedAt` priority) | Aadhaar / OTP verification |
-| Single-writer-per-train-class → no overbooking | UPI mandate / NPCI |
-| Atomic seat decrement (`findOneAndUpdate` + `$gt:0`) | Email / WhatsApp notifications |
-| Deterministic berth allocation | Queue transport: **BullMQ substituted for Kafka** (same ordered, single-consumer semantics) |
-| Execute-after-confirm mandate (no money-debited-no-ticket) | |
-| Idempotent, redelivery-safe processing | |
-| Live seat counter + status over WebSocket | |
+| Prepare-ahead flow (info + payment auth before the window) | Aadhaar / OTP |
+| One-tap booking at Tatkal time | UPI mandate / NPCI |
+| Deterministic berth allocation | Email / WhatsApp notifications |
+| Execute-after-confirm mandate (debit only on confirm) | Runs in-browser (localStorage), inventory is per-browser |
+| Idempotent booking (re-tap safe) | |
 
-The `/about` endpoint returns this list as JSON; the client `/about` page renders it.
-
-## Setup
-
-Requires Node 18+ and managed cloud services (no local Redis/Mongo needed):
-
-1. **MongoDB Atlas** — free cluster, copy the SRV connection string.
-2. **Upstash Redis** — free database, copy the `rediss://` (TLS) URL.
-
-```bash
-cp .env.example .env   # then fill in MONGODB_URI and REDIS_URL
-npm install
-npm install --prefix client
-npm run seed           # loads mock trains + inventory, warms the seat cache
-```
-
-## Run (two terminals)
-
-```bash
-npm run server         # API + Socket.io on :4000
-```
-
-```bash
-npm run worker         # BullMQ consumers; prints "waiting for jobs…"
-```
-
-Client (full pre-book → book → live-status flow, Apple-style UI):
-
-```bash
-npm run client         # Vite dev server on :5173, proxies to :4000
-```
-
-The client is complete: Search → Passengers → Aadhaar (mock) → UPI mandate
-(mock) → Intent Confirmed → Review → **Live Status** (WebSocket queue position,
-live seat counter, PNR/RAC/WL outcome). Tailwind is loaded via CDN for now;
-swap to a PostCSS build before production.
-
-## Smoke test (no UI)
-
-```bash
-# 1. pre-book (returns intentId)
-curl -s -X POST localhost:4000/api/intent -H 'content-type: application/json' -d '{
-  "userMobile":"9999999999","userEmail":"demo@example.com",
-  "trainId":"12951","class":"3A","journeyDate":"2026-09-01",
-  "passengers":[{"name":"A","age":30,"gender":"M","berthPref":"LB"}]
-}'
-
-# 2. fire the booking (expect 202 instantly)
-curl -s -X POST localhost:4000/api/book -H 'content-type: application/json' -d '{"intentId":"<id>"}'
-
-# 3. watch the worker terminal: PROCESSING → CONFIRMED (PNR...), seat decremented.
-# 4. look it up:  curl localhost:4000/api/pnr/<PNR>   ·   list:  curl localhost:4000/api/intents
-```
-
-Train `12951` class `3A` is seeded with only **2 seats + 3 RAC**, so a burst of
-concurrent pre-book+book calls demonstrates CONFIRMED → RAC → WAITLIST with no
-overbooking and no double-charge (waitlisted mandates are RELEASED, not debited).
-
-## Layout
-
-```
-shared/    constants + idempotency key
-server/    Express API, Mongoose models, BullMQ producer, Socket.io bridge
-worker/    BullMQ consumers — allocate, mandate, notify (the core engine)
-scripts/   seed.js
-client/    Vite React app — full wizard + live status (Apple-style UI kit)
-```
+The `/about` page in the app lists this too.
