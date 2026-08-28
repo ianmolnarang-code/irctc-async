@@ -15,6 +15,22 @@ export default function About() {
       <Card title={d.project} bodyClass="p-4">
         <p className="text-[13px] text-muted">{d.tagline}</p>
       </Card>
+
+      {(d.problem || d.helps) && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Card title="The problem today" bodyClass="p-4">
+            <ul className="space-y-1.5 text-[13px]">
+              {(d.problem || []).map((x) => <li key={x} className="flex gap-2"><span className="text-avail-red">✕</span>{x}</li>)}
+            </ul>
+          </Card>
+          <Card title="How this helps" bodyClass="p-4">
+            <ul className="space-y-1.5 text-[13px]">
+              {(d.helps || []).map((x) => <li key={x} className="flex gap-2"><span className="text-avail-green">✓</span>{x}</li>)}
+            </ul>
+          </Card>
+        </div>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-2">
         <Card title="✓ Real" bodyClass="p-4">
           <ul className="space-y-1.5 text-[13px]">
