@@ -23,6 +23,16 @@ export default function BookingReview() {
   const [now, setNow] = useState(Date.now());
   const [skipped, setSkipped] = useState(false);
 
+  // Tatkal opens at 10:00 AM. Target the next 10:00 (today if we're before it,
+  // otherwise tomorrow) so there's always a real countdown to show.
+  const [openAt] = useState(() => {
+    const t = new Date();
+    t.setHours(10, 0, 0, 0);
+    if (Date.now() >= t.getTime()) t.setDate(t.getDate() + 1);
+    return t.getTime();
+  });
+  const opensToday = new Date(openAt).toDateString() === new Date().toDateString();
+
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
@@ -30,7 +40,6 @@ export default function BookingReview() {
 
   if (!draft.intentId) return <Navigate to="/" replace />;
 
-  const openAt = draft.train.tatkalOpenAt ? new Date(draft.train.tatkalOpenAt).getTime() : 0;
   const remaining = Math.max(0, openAt - now);
   const windowOpen = remaining <= 0;
   const unlocked = windowOpen || skipped;
@@ -55,8 +64,9 @@ export default function BookingReview() {
       {!unlocked ? (
         <div className="mb-4 overflow-hidden rounded-[6px] bg-brand-dark text-white shadow-sm">
           <div className="px-5 py-5 text-center">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">Tatkal (Tatkal quota) window opens in</div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">Tatkal window opens in</div>
             <div className="tabular mt-1.5 text-5xl font-bold leading-none">{fmt(remaining)}</div>
+            <div className="mt-2 text-[12.5px] text-white/75">Opens {opensToday ? 'today' : 'tomorrow'} at 10:00 AM</div>
             <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[12px] text-white/85">
               <span>🔒</span> Booking unlocks automatically when the timer hits zero
             </div>
