@@ -1,39 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useBooking } from '../store/BookingContext.jsx';
 import { book, cancel } from '../api/client.js';
 import Card from '../components/ui/Card.jsx';
 import Button from '../components/ui/Button.jsx';
-import MockTag from '../components/MockTag.jsx';
 import { CLASS_LABEL, inr, BERTH_LABEL } from '../constants.js';
-
-function fmt(ms) {
-  const s = Math.max(0, Math.floor(ms / 1000));
-  const h = String(Math.floor(s / 3600)).padStart(2, '0');
-  const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
-  const sec = String(s % 60).padStart(2, '0');
-  return `${h}:${m}:${sec}`;
-}
 
 export default function BookingReview() {
   const nav = useNavigate();
   const { draft, patch, reset } = useBooking();
   const [busy, setBusy] = useState(null);
   const [err, setErr] = useState(null);
-  const [now, setNow] = useState(Date.now());
-  const [override, setOverride] = useState(false);
-
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, []);
 
   if (!draft.intentId) return <Navigate to="/" replace />;
-
-  const openAt = draft.train.tatkalOpenAt ? new Date(draft.train.tatkalOpenAt).getTime() : 0;
-  const remaining = openAt - now;
-  const isOpen = remaining <= 0;
-  const gated = !isOpen && !override;
 
   async function confirm() {
     setBusy('book'); setErr(null);
@@ -51,22 +30,10 @@ export default function BookingReview() {
 
   return (
     <div className="mx-auto max-w-lg">
-      {/* Tatkal window banner */}
-      <div className={`mb-3 rounded-[3px] px-4 py-2.5 text-[13px] ${isOpen ? 'bg-green-50 text-avail-green' : 'bg-amber-50 text-avail-amber'}`}>
-        {isOpen ? (
-          <span>🟢 <strong>Tatkal booking is open.</strong> Your seat is allocated in FCFS order.</span>
-        ) : (
-          <span>⏳ Tatkal (TATKAL quota) opens in <strong className="tabular">{fmt(remaining)}</strong>. In production your booking fires automatically then.</span>
-        )}
-      </div>
-
       <Card title="Review & Book" bodyClass="p-0">
-        <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
-          <div>
-            <div className="text-[14px] font-bold text-brand-dark">{draft.train.trainName} <span className="font-normal text-muted">(#{draft.train.trainId})</span></div>
-            <div className="text-[12px] text-muted">{draft.train.from} → {draft.train.to} · {CLASS_LABEL[draft.train.class]} · {draft.journeyDate}</div>
-          </div>
-          <MockTag>10 AM auto-trigger</MockTag>
+        <div className="border-b border-line px-4 py-2.5">
+          <div className="text-[14px] font-bold text-brand-dark">{draft.train.trainName} <span className="font-normal text-muted">(#{draft.train.trainId})</span></div>
+          <div className="text-[12px] text-muted">{draft.train.from} → {draft.train.to} · {CLASS_LABEL[draft.train.class]} · {draft.journeyDate}</div>
         </div>
         <table className="w-full text-[13px]">
           <thead>
@@ -96,17 +63,13 @@ export default function BookingReview() {
         <Button variant="danger" disabled={!!busy} onClick={abort} className="flex-1">
           {busy === 'cancel' ? 'Cancelling…' : 'Cancel'}
         </Button>
-        <Button variant="cta" disabled={!!busy || gated} onClick={confirm} className="flex-1">
-          {busy === 'book' ? 'Queuing…' : (isOpen || override) ? 'Book Now' : 'Waiting for 10 AM…'}
+        <Button variant="cta" disabled={!!busy} onClick={confirm} className="flex-1">
+          {busy === 'book' ? 'Booking…' : 'Book Now'}
         </Button>
       </div>
-
-      {gated && (
-        <button onClick={() => setOverride(true)} className="mt-3 block w-full text-center text-[12px] text-brand hover:underline">
-          Simulate the 10 AM trigger now (demo)
-        </button>
-      )}
-      <p className="mt-2 text-center text-[11px] text-muted">Instant to submit — a worker allocates the seat in FCFS order. Watch it live next.</p>
+      <p className="mt-2 text-center text-[11px] text-muted">
+        Your seat is allocated instantly, in first-come order. Fare is debited only if it confirms.
+      </p>
     </div>
   );
 }

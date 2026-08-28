@@ -5,7 +5,6 @@ import Search from './pages/Search.jsx';
 import Passengers from './pages/PreBook/Passengers.jsx';
 import AadhaarOtp from './pages/PreBook/AadhaarOtp.jsx';
 import UpiMandate from './pages/PreBook/UpiMandate.jsx';
-import IntentConfirmed from './pages/IntentConfirmed.jsx';
 import BookingReview from './pages/BookingReview.jsx';
 import LiveStatus from './pages/LiveStatus.jsx';
 import About from './pages/About.jsx';
@@ -89,7 +88,6 @@ export default function App() {
             <Route path="/prebook/passengers" element={<Passengers />} />
             <Route path="/prebook/aadhaar" element={<AadhaarOtp />} />
             <Route path="/prebook/upi" element={<UpiMandate />} />
-            <Route path="/confirmed" element={<IntentConfirmed />} />
             <Route path="/review" element={<BookingReview />} />
             <Route path="/live" element={<LiveStatus />} />
             <Route path="/pnr" element={<PnrEnquiry />} />

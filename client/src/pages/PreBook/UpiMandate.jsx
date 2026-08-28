@@ -34,7 +34,7 @@ export default function UpiMandate() {
         upiVpa: vpa,
       });
       patch({ upiVpa: vpa, intentId: res.intentId, mandate: { amount } });
-      nav('/confirmed');
+      nav('/review');
     } catch (e) {
       setErr(e.response?.data?.error || e.message);
     } finally {
