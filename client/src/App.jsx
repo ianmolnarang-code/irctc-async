@@ -1,8 +1,7 @@
-import { useState } from 'react';
 import { Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import { BookingProvider } from './store/BookingContext.jsx';
+import { AuthProvider, useAuth } from './store/AuthContext.jsx';
 import LogoIRCTC from './components/LogoIRCTC.jsx';
-import LoginModal from './components/LoginModal.jsx';
 import Search from './pages/Search.jsx';
 import Passengers from './pages/PreBook/Passengers.jsx';
 import AadhaarOtp from './pages/PreBook/AadhaarOtp.jsx';
@@ -25,7 +24,8 @@ const MENU = [
   ['MORE', '/'],
 ];
 
-function Header({ user, onLoginClick, onLogout }) {
+function Header() {
+  const { user, openLogin, logout } = useAuth();
   return (
     <>
       {/* Utility strip */}
@@ -40,12 +40,12 @@ function Header({ user, onLoginClick, onLogout }) {
           {user ? (
             <>
               <span className="opacity-90">Hi, <strong>{user}</strong></span>
-              <button onClick={onLogout} className="opacity-90 hover:opacity-100 hover:underline">Logout</button>
+              <button onClick={logout} className="opacity-90 hover:opacity-100 hover:underline">Logout</button>
             </>
           ) : (
             <>
-              <button onClick={onLoginClick} className="opacity-90 hover:opacity-100 hover:underline">Login</button>
-              <button onClick={onLoginClick} className="opacity-90 hover:opacity-100 hover:underline">Register</button>
+              <button onClick={openLogin} className="opacity-90 hover:opacity-100 hover:underline">Login</button>
+              <button onClick={openLogin} className="opacity-90 hover:opacity-100 hover:underline">Register</button>
             </>
           )}
         </div>
@@ -87,15 +87,12 @@ function Header({ user, onLoginClick, onLogout }) {
   );
 }
 
-export default function App() {
+function AppShell() {
   const { pathname } = useLocation();
-  const [loginOpen, setLoginOpen] = useState(false);
-  const [user, setUser] = useState(null);
   return (
     <BookingProvider>
       <div className="flex min-h-full flex-col">
-        <Header user={user} onLoginClick={() => setLoginOpen(true)} onLogout={() => setUser(null)} />
-        <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} onLogin={(u) => { setUser(u); setLoginOpen(false); }} />
+        <Header />
         <main key={pathname} className="mx-auto w-full max-w-[1000px] flex-1 animate-fade-in px-3 py-4">
           <Routes>
             <Route path="/" element={<Search />} />
@@ -118,5 +115,13 @@ export default function App() {
         </footer>
       </div>
     </BookingProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppShell />
+    </AuthProvider>
   );
 }

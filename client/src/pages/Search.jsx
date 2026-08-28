@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAvailability } from '../api/client.js';
 import { useBooking } from '../store/BookingContext.jsx';
+import { useAuth } from '../store/AuthContext.jsx';
 import { CLASS_LABEL, inr, FARE } from '../constants.js';
 import Button from '../components/ui/Button.jsx';
 import SeatCounter from '../components/SeatCounter.jsx';
@@ -22,6 +23,7 @@ function avail(c) {
 export default function Search() {
   const nav = useNavigate();
   const { patch } = useBooking();
+  const { requireLogin } = useAuth();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
@@ -80,15 +82,19 @@ export default function Search() {
 
   function proceed() {
     if (!pick) return;
-    patch({
+    const snapshot = {
       train: {
         trainId: pick.trainId, trainName: pick.trainName, from: pick.from, to: pick.to,
         class: pick.class, seatsLeft: pick.seatsLeft, racLeft: pick.racLeft,
         tatkalOpenAt: pick.tatkalOpenAt,
       },
       journeyDate,
+    };
+    // Booking requires login — prompt if needed, then continue automatically.
+    requireLogin(() => {
+      patch(snapshot);
+      nav('/prebook/passengers');
     });
-    nav('/prebook/passengers');
   }
 
   return (

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import Button from './ui/Button.jsx';
-import MockTag from './MockTag.jsx';
 
 // IRCTC-style login window — demo only, fields are prefilled. No real auth:
 // "LOGIN" just closes the window and marks a demo user as signed in.
@@ -19,11 +18,6 @@ export default function LoginModal({ open, onClose, onLogin }) {
         </div>
 
         <div className="space-y-3.5 p-5">
-          <div className="flex items-center gap-2">
-            <MockTag>Demo login</MockTag>
-            <span className="text-[12px] text-muted">Prefilled — no real account.</span>
-          </div>
-
           <div>
             <label className="mb-1 block text-[12px] font-medium text-brand-dark">User Name</label>
             <input defaultValue="demo_user" autoComplete="off"
