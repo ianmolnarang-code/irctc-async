@@ -4,8 +4,7 @@ import { Inventory } from '../server/models/Inventory.js';
 import { Intent } from '../server/models/Intent.js';
 import { Mandate } from '../server/models/Mandate.js';
 import { Pnr } from '../server/models/Pnr.js';
-import { createRedisClient } from '../server/redis.js';
-import { seatsKey, CLASSES } from '../shared/constants.js';
+import { CLASSES } from '../shared/constants.js';
 
 // Tatkal window for the demo: opens 5 min from now so you can show the countdown,
 // but the "Book Right Now" button bypasses it anyway.
@@ -78,14 +77,6 @@ async function seed() {
   }
   const inserted = await Inventory.insertMany(docs);
   console.log(`[seed] inserted ${inserted.length} inventory docs`);
-
-  // Warm the Redis availability cache so GET /availability is fast from t=0.
-  const redis = createRedisClient();
-  await Promise.all(
-    inserted.map((d) => redis.set(seatsKey(d.trainId, d.class), String(d.seatsLeft)))
-  );
-  console.log('[seed] warmed Redis seat cache');
-  await redis.quit();
 
   await disconnectMongo();
   console.log('[seed] done');

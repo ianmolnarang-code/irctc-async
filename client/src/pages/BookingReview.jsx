@@ -17,7 +17,7 @@ function fmt(ms) {
 
 export default function BookingReview() {
   const nav = useNavigate();
-  const { draft, reset } = useBooking();
+  const { draft, patch, reset } = useBooking();
   const [busy, setBusy] = useState(null);
   const [err, setErr] = useState(null);
   const [now, setNow] = useState(Date.now());
@@ -37,8 +37,11 @@ export default function BookingReview() {
 
   async function confirm() {
     setBusy('book'); setErr(null);
-    try { await book(draft.intentId); nav('/live'); }
-    catch (e) { setErr(e.response?.data?.error || e.message); setBusy(null); }
+    try {
+      const outcome = await book(draft.intentId); // synchronous: seat allocated now
+      patch({ outcome });
+      nav('/live');
+    } catch (e) { setErr(e.response?.data?.error || e.message); setBusy(null); }
   }
   async function abort() {
     setBusy('cancel'); setErr(null);
