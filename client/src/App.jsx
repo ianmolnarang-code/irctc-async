@@ -48,7 +48,7 @@ function Header() {
               <span className="text-[15px] font-bold tracking-tight">IR</span>
             </span>
             <span className="leading-tight">
-              <span className="block text-[17px] font-bold text-brand-dark">Async Tatkal</span>
+              <span className="block text-[17px] font-bold text-brand-dark">Tatkal Ready</span>
               <span className="block text-[10px] text-muted">Indian Railway Catering &amp; Tourism · <em>demo</em></span>
             </span>
           </Link>

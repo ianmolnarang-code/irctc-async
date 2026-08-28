@@ -1,4 +1,4 @@
-# Async Tatkal — prepare-ahead Tatkal booking (demo)
+# Tatkal Ready — prepare-ahead Tatkal booking (demo)
 
 An IRCTC-style booking demo that fixes the 10 AM Tatkal scramble. You do all the
 slow stuff **before** the window opens — passenger details, identity, and a

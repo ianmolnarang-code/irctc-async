@@ -216,7 +216,7 @@ export async function getBookings(mobile) {
 
 export async function getAbout() {
   return delay({
-    project: 'Async Tatkal (demo)',
+    project: 'Tatkal Ready (demo)',
     tagline: 'Do the paperwork before 10 AM. At 10 AM, one tap books the seat.',
     problem: [
       'At 10:00 everyone fills passenger details + pays at the same moment — it takes time and seats vanish mid-form.',
