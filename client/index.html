@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Async Tatkal — IRCTC-style demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
+    <!-- Tailwind via CDN for the scaffold pass. Swap to a PostCSS build before prod. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      // Palette sourced from the IRCTC site scan (colorize.design): indigo
+      // primary, blue CTAs, gray neutrals, gold for demo/notice accents.
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              brand: { DEFAULT: '#4f46e5', dark: '#4338ca', mid: '#6366f1', light: '#e0e7ff' },
+              accent: { DEFAULT: '#2563eb', dark: '#1d4ed8' },
+              demo: { DEFAULT: '#d97706', dark: '#b45309' },
+              avail: { green: '#15803d', red: '#dc2626', amber: '#a16207' },
+              ink: '#111827',
+              muted: '#6b7280',
+              line: '#e5e7eb',
+              page: '#f3f4f6',
+            },
+            fontFamily: { sans: ['Roboto', 'Arial', 'Helvetica', 'sans-serif'] },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
