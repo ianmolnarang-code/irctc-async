@@ -70,6 +70,10 @@ export default function BookingReview() {
       <p className="mt-2 text-center text-[11px] text-muted">
         Your seat is allocated instantly, in first-come order. Fare is debited only if it confirms.
       </p>
+      <p className="mt-1 text-center text-[11px] text-muted">
+        Not 10 AM yet? Your details &amp; payment hold are saved —{' '}
+        <button onClick={() => nav('/bookings')} className="text-accent-dark hover:underline">book later with one tap</button> from My Bookings.
+      </p>
     </div>
   );
 }
